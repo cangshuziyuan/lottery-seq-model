@@ -1,0 +1,14 @@
+services:
+  lottery-lab:
+    build: .
+    image: lottery-lab:latest
+    container_name: lottery-lab
+    restart: unless-stopped
+    ports:
+      - "5179:5179"
+    environment:
+      TZ: Asia/Shanghai
+      LOTTERY_DB: /app/data/lottery.db
+      BACKFILL_LIMIT: "60"
+    volumes:
+      - ./data:/app/data

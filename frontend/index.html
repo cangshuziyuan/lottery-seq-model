@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>双色球 · 大乐透 预测模型实验台</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/vendor/g2.min.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <div>
+        <p class="fine">真实开奖 · 存档对号 · 全历史考试</p>
+        <h1>彩票预测模型实验台</h1>
+        <p>这里把常见的「看走势选号」思路写成程序，放到双色球和大乐透的<b>真实开奖</b>里逐期考试：每期每个模型买 5 注，开奖后自动对号。页面从上往下就四件事——<b>开奖号码长什么样 → 模型喜欢押什么号 → 模型选了什么号 → 到底准不准</b>。</p>
+      </div>
+      <div class="caveat">先说清楚：彩票每期都是独立随机开奖，历史规律推不出下一期。本页是科普实验，用来证明「预测方法不成立」，不构成购彩建议。</div>
+    </header>
+
+    <div class="toolbar">
+      <div class="toolbar-actions">
+        <select id="game" aria-label="彩票类型"></select>
+        <button id="sync" class="secondary">更新官方开奖</button>
+        <button id="run-now" class="secondary">立即执行定时任务</button>
+      </div>
+      <div id="source" class="fine"></div>
+    </div>
+    <div id="schedule" class="fine schedule"></div>
+
+    <section class="verdict">
+      <div class="verdict-text">
+        <h2>先说结论</h2>
+        <p id="verdict-line" class="verdict-line">正在计算…</p>
+        <p id="verdict-sub" class="fine"></p>
+      </div>
+      <div id="verdict-cards" class="verdict-cards"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>最新开奖</h2><span id="history-note" class="fine"></span></div>
+      <div id="metrics" class="metrics"></div>
+      <h3 class="sub-title">最近 20 期开了什么号</h3>
+      <div id="recent" class="recent"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>① 开奖号码长什么样</h2></div>
+      <p class="explain"><b>怎么看：</b>上面的折线是最近 60 期「号码加起来有多大」（行话叫和值），虚线是它的平均值——如果开奖有规律，这条线该有升有降地走趋势；实际上它只是上下乱跳。下面每张柱状图：<b>柱子＝这个号在近 120 期出现了多少次</b>，红色虚线＝按概率「应该」出现的次数（柱子都在虚线附近，说明号码没有冷热之分）。鼠标放上去还能看到每个号「已经多少期没出」（行话叫遗漏）。</p>
+      <div id="trend" class="chart short"></div>
+      <div id="zones" class="zones"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>② 每个模型喜欢押什么号</h2><select id="zone" aria-label="号码区域"></select></div>
+      <p class="explain"><b>怎么看：</b>这是本页的重点图。<b>一行＝一个模型，一列＝一个号码，格子颜色＝这个模型有多偏爱这个号</b>（1.0 倍＝跟闭眼乱选完全一样，2.0 倍＝加倍押注）。结论很直观：大多数格子颜色深浅差不多——这些模型只是「猜法」不同，谁也没从历史里找到真正管用的规律。</p>
+      <div class="legend-row" id="pref-legend"></div>
+      <div id="pref" class="chart heat"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>③ 下一期（第 <span id="target-issue">…</span> 期）模型选的号</h2><span id="predict-note" class="fine"></span></div>
+      <p class="explain"><b>怎么看：</b>每个模型按自己的偏好，对下一期各抽 5 注号码。<b>这些号码已提前存进数据库、不能改</b>，等开奖后会自动逐注对号（见第⑤部分）。当实验记录看就好，不是推荐。下面第一张图先看模型彼此有多像：格子越深，两个模型越经常选到同一个号。</p>
+      <div id="disagree" class="chart heat"></div>
+      <div id="models" class="grid-models"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>④ 到底准不准：拿全部历史逐期考试</h2><span id="backtest-note" class="fine"></span></div>
+      <p class="explain"><b>怎么看：</b>这是最硬核的考试：拿前 180 期当「教材」，从第 181 期开始逐期「用过去预测未来」，每期每个模型买 5 注，一直考到最新一期，共 <b id="periods-inline">…</b> 期。前三张图分别是：① <b>每投 1 元收回多少</b>（1 元＝不赚不亏，红虚线＝闭眼乱选的水平）；② <b>一直买下去，账面还剩多少钱</b>；③ <b>每期比闭眼乱选多赚多少</b>（灰带跨过红虚线＝跟乱选没区别）。后面两张新图看「中的是什么」：④ 奖级构成，⑤ 每注命中几个号。</p>
+      <div id="roi" class="chart"></div>
+      <div id="cum" class="chart tall"></div>
+      <div id="band" class="chart"></div>
+      <h3 class="sub-title">中的是哪一档奖</h3>
+      <p class="explain">柱子堆起来的高度＝中奖注数。颜色越暖，奖级越高。如果各模型的色块比例差不多，说明「选号思路」并没有让人中到更高的奖。</p>
+      <div id="prize-mix" class="chart"></div>
+      <h3 class="sub-title">一注里平均命中几个号</h3>
+      <p class="explain">横轴是命中个数（0＝一个都没中）。柱子是全部考试注数里占多少。灰柱是闭眼乱选。谁的柱子如果明显往右偏，才算比乱选更能撞上号码。</p>
+      <div id="hit-dist" class="chart"></div>
+      <div id="table"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>⑤ 实盘留存：开奖后自动对号</h2><span id="record-note" class="fine"></span></div>
+      <p class="explain"><b>怎么看：</b>第③部分存下的号码，开奖后逐注对号。<b>第一张图＝实盘账面曲线</b>（花掉的钱减去收回的钱）；<b>第二张图＝每期每模型最好的一注命中了几个号</b>（颜色越深＝命中越多，空白格＝没存预测）；下面是总账和逐注对照。</p>
+      <div id="rec-cum" class="chart short"></div>
+      <div id="rec-hits" class="chart"></div>
+      <div id="record-table"></div>
+      <div id="record-detail"></div>
+    </section>
+
+    <section>
+      <details class="glossary">
+        <summary>名词解释（看不懂术语就点开）</summary>
+        <dl>
+          <dt>和值</dt><dd>一期开奖号码全部加起来的大小。用来一眼看出号码「大小」在乱跳。</dd>
+          <dt>遗漏</dt><dd>某个号码已经连续多少期没出现了。行话爱说「该出了」——其实每期概率都一样。</dd>
+          <dt>每投 1 元收回多少（回报率）</dt><dd>买彩票的总花费是分母，中奖拿回的钱是分子。彩票返奖率大约只有一半，所以长期这个数必然小于 1。</dd>
+          <dt>随机基线（闭眼乱选）</dt><dd>不看任何走势、纯随机选号的对照组。任何模型只有持续赢过它，才算真的找到了规律。</dd>
+          <dt>逐期试算（走步回测）</dt><dd>只用某一期之前的历史去预测该期，考完一期再往前挪一期，像真的买了很多期一样。</dd>
+          <dt>正常波动范围</dt><dd>运气造成的上下波动区间。如果一个模型的成绩落在这个范围里，就说明它的「成绩」只是运气。</dd>
+          <dt>命中</dt><dd>预测号码与实际开奖号码相同的个数。双色球红球 6 个＋蓝球 1 个；大乐透前区 5 个＋后区 2 个。</dd>
+          <dt>遗漏衰减 / 超期加权</dt><dd>一对相反的冷号说法：衰减认为越久没出越不该买；超期认为超过自己的平均间隔就该买。</dd>
+          <dt>反转转移 / 邻号跟随</dt><dd>反转专挑上期之后很少接着出现的号；邻号专买上期号码左右相邻的号。</dd>
+          <dt>模型重合度</dt><dd>两个模型各自最偏爱的前若干个号里，有多少是同一个号。1＝选的号完全一样，0＝一个都不重合。</dd>
+        </dl>
+      </details>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
